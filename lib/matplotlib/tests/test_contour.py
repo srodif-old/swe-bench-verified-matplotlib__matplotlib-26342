@@ -823,3 +823,38 @@ def test_deprecated_apis():
         assert_array_equal(cs.tcolors, [c.get_edgecolor() for c in colls])
     with pytest.warns(mpl.MatplotlibDeprecationWarning, match="tlinewidths"):
         assert cs.tlinewidths == [c.get_linewidth() for c in colls]
+
+
+def test_contour_set_paths():
+    """Test ContourSet.set_paths method."""
+    # Create a simple contour
+    fig, ax = plt.subplots()
+    data = np.arange(16).reshape((4, 4))
+    cs = ax.contour(data)
+    
+    # Get the original paths
+    original_paths = cs.get_paths()
+    assert len(original_paths) > 0
+    
+    # Create new test paths (simple squares)
+    from matplotlib.path import Path
+    new_paths = []
+    for i in range(len(original_paths)):
+        # Create a simple square path
+        vertices = np.array([[i, i], [i+1, i], [i+1, i+1], [i, i+1], [i, i]])
+        codes = [Path.MOVETO, Path.LINETO, Path.LINETO, Path.LINETO, Path.CLOSEPOLY]
+        new_paths.append(Path(vertices, codes))
+    
+    # Test setting new paths
+    cs.set_paths(new_paths)
+    
+    # Verify that the paths were set correctly
+    retrieved_paths = cs.get_paths()
+    assert len(retrieved_paths) == len(new_paths)
+    
+    # Verify that the paths are the same objects we set
+    for original, retrieved in zip(new_paths, retrieved_paths):
+        assert original is retrieved
+    
+    # Verify that stale flag was set
+    assert cs.stale is True
